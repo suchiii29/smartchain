@@ -10,5 +10,35 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+// WebMCP: Enable AI Agent Communication
+if (window.navigator?.modelContext) {
+  window.navigator.modelContext.registerTool({
+    name: 'get_shipment_status',
+    description: 'Get shipment status by ID',
+    handler: async (input) => {
+      return { shipmentId: input.shipmentId, status: 'In Transit' };
+    }
+  });
+  
+  window.navigator.modelContext.registerTool({
+    name: 'report_delay',
+    description: 'Report a delivery delay',
+    handler: async (input) => {
+      return { success: true, message: 'Delay reported' };
+    }
+  });
+  
+  window.navigator.modelContext.registerTool({
+    name: 'get_ai_prediction',
+    description: 'Get AI delay prediction',
+    handler: async (input) => {
+      return { riskScore: 50, riskLevel: 'Medium' };
+    }
+  });
+  
+  console.log('✅ WebMCP Tools Registered:', window.navigator.modelContext.tools);
+}
+  </script>
 </body>
 </html>
