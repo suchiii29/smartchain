@@ -7,38 +7,172 @@
   <meta name="description" content="SmartChain Supply Chain Platform">
   <title>SmartChain</title>
   <link rel="manifest" href="manifest.json">
+
+<!--
+WebMCP Implementation for SmartChain
+=====================================
+
+What is WebMCP? (From Hack2Skill 2026 Presentation)
+- Web Model Context Protocol lets AI agents talk DIRECTLY to websites
+- No screen scraping needed (98% accuracy vs 70% with vision-based)
+- 89% token savings, 67.6% overhead reduction
+
+How AI Agents Use This:
+1. Discover tools via agent-schema script (Declarative API)
+2. Call tools via navigator.modelContext.registerTool() (Imperative API)
+3. Receive structured JSON responses
+4. No pixel-guessing or vision models needed
+
+Tools Available:
+- get_shipment_status: Query shipment info by ID
+- report_delay: Report delivery delays with severity
+- get_ai_prediction: Get AI delay predictions for routes
+
+ROI Metrics (from WebMCP presentation):
+- 98% Task Accuracy (eliminates guesswork)
+- 89% Token Savings (no vision model costs)
+- 67.6% Overhead Reduction (skip DOM tree processing)
+
+Reference: Hack2Skill 2026 WebMCP Presentation - "The Agentic Handshake"
+-->
+<script type="application/agent-schema">
+{
+  "tools": [
+    {
+      "name": "get_shipment_status",
+      "description": "Get current status of a shipment by ID. Returns shipment location, ETA, and risk score.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "shipmentId": {
+            "type": "string",
+            "description": "Shipment ID like SHP-1001"
+          }
+        },
+        "required": ["shipmentId"]
+      }
+    },
+    {
+      "name": "report_delay",
+      "description": "Report a delivery delay with reason and severity level.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "truckId": {
+            "type": "string",
+            "description": "Truck ID like MH-12-AB-1234"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for delay (traffic, weather, mechanical, etc.)"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["Low", "Medium", "High"],
+            "description": "Delay severity level"
+          }
+        },
+        "required": ["truckId", "reason"]
+      }
+    },
+    {
+      "name": "get_ai_prediction",
+      "description": "Get AI-powered delay prediction for a route using Google Gemini AI.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "description": "Origin city (e.g., Mumbai)"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination city (e.g., Delhi)"
+          }
+        },
+        "required": ["origin", "destination"]
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
 // WebMCP: Enable AI Agent Communication
+// Reference: Hack2Skill 2026 WebMCP Presentation - "The Agentic Handshake"
+// ROI: 98% Task Accuracy, 89% Token Savings, 67.6% Overhead Reduction
+
 if (window.navigator?.modelContext) {
+  
+  // Tool 1: Get Shipment Status
   window.navigator.modelContext.registerTool({
     name: 'get_shipment_status',
-    description: 'Get shipment status by ID',
+    description: 'Get current status of a shipment by ID',
     handler: async (input) => {
-      return { shipmentId: input.shipmentId, status: 'In Transit' };
+      if (window.flutter_inappwebview) {
+        return await window.flutter_inappwebview.callMethod('getShipmentStatus', [input.shipmentId]);
+      }
+      return { shipmentId: input.shipmentId, status: 'In Transit', location: 'Mumbai' };
     }
   });
   
+  // Tool 2: Report Delay
   window.navigator.modelContext.registerTool({
     name: 'report_delay',
-    description: 'Report a delivery delay',
+    description: 'Report a delivery delay with reason',
     handler: async (input) => {
-      return { success: true, message: 'Delay reported' };
+      if (window.flutter_inappwebview) {
+        return await window.flutter_inappwebview.callMethod('reportDelay', [input.truckId, input.reason, input.severity]);
+      }
+      return { success: true, message: 'Delay reported successfully' };
     }
   });
   
+  // Tool 3: Get AI Prediction
   window.navigator.modelContext.registerTool({
     name: 'get_ai_prediction',
-    description: 'Get AI delay prediction',
+    description: 'Get AI-powered delay prediction for a route',
     handler: async (input) => {
-      return { riskScore: 50, riskLevel: 'Medium' };
+      if (window.flutter_inappwebview) {
+        return await window.flutter_inappwebview.callMethod('getAIPrediction', [input.origin, input.destination]);
+      }
+      return { riskScore: 50, riskLevel: 'Medium', predictedDelay: '1 hour' };
     }
   });
   
+  // Log registered tools for debugging
   console.log('✅ WebMCP Tools Registered:', window.navigator.modelContext.tools);
+  console.log('🎯 WebMCP ROI Metrics (from Hack2Skill 2026 docs):');
+  console.log('   - 98% Task Accuracy (vs 70% screen scraping)');
+  console.log('   - 89% Token Savings');
+  console.log('   - 67.6% Overhead Reduction');
 }
-  </script>
+
+// Listen for agentInvoked events (Declarative API Pattern)
+document.addEventListener('agentInvoked', (event) => {
+  console.log('🤖 Agent invoked tool:', event.detail.toolName, event.detail.input);
+  
+  // Handle agent-triggered actions
+  if (event.detail.toolName === 'report_delay') {
+    console.log('⚠️ Agent-reported delay:', event.detail.input);
+  }
+});
+
+// Provide context about current page state to AI agents
+function updateAgentContext() {
+  if (window.navigator?.modelContext?.provideContext) {
+    window.navigator.modelContext.provideContext({
+      currentPage: 'SmartChain Dashboard',
+      totalShipments: 5,
+      activeAlerts: 0,
+      lastUpdated: new Date().toISOString()
+    });
+  }
+}
+
+window.addEventListener('load', updateAgentContext);
+</script>
 </body>
 </html>

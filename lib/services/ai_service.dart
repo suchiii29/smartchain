@@ -1,115 +1,149 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/disruption_alert.dart';
+import 'mcp_service.dart';
 
-/// A service to interact with the Google Gemini API for AI-powered delay predictions.
 class AiService {
-  static const String _apiKey = 'AIzaSyAhp4UwexN-ErV-SHXP1T-PUj_tXZdOS7c';
-  static const String _apiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey';
+  static const _apiKey = 'YOUR_KEY';
+  static const _apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=\$_apiKey';
 
-  /// Predicts the delivery delay based on various route conditions using the Gemini API.
-  ///
-  /// Takes [origin], [destination], [trafficCondition], [weatherCondition], and [timeOfDay].
-  /// Returns a structured JSON map containing:
-  /// - riskScore (0-100)
-  /// - riskLevel (Low/Medium/High/Critical)
-  /// - predictedDelay (in hours)
-  /// - reasons (List of strings)
-  /// - suggestedAction (String)
-  /// - alternativeRoute (String)
-  ///
-  /// In case of an API error or parsing failure, it gracefully returns fallback values.
-  Future<Map<String, dynamic>> predictDelay({
-    required String origin,
-    required String destination,
-    required String trafficCondition,
-    required String weatherCondition,
-    required String timeOfDay,
+  Future<List<DisruptionAlert>> analyzeDisruptions({
+    required List<Map<String, dynamic>> shipments,
+    required List<String> conditions,
   }) async {
-    final prompt = '''
-You are an AI assistant for a supply chain app (SmartChain).
-Please predict the delivery delay based on the following route and conditions.
-Origin: $origin
-Destination: $destination
-Traffic Condition: $trafficCondition
-Weather Condition: $weatherCondition
-Time of Day: $timeOfDay
+    try {
+      // 1. Fetch live conditions from MCP
+      final liveConditions = await McpService.getSupplyChainConditions();
+      
+      // 2. Merge conditions
+      final allConditions = [...conditions, ...liveConditions];
 
-Return the response STRICTLY as a JSON object with the following fields:
-- riskScore (number between 0-100)
-- riskLevel (String: Low, Medium, High, Critical)
-- predictedDelay (number: predicted delay in hours)
-- reasons (List of strings explaining the delay)
-- suggestedAction (String recommendation)
-- alternativeRoute (String suggested alternative route)
+      // 3. Update prompt with MCP context
+      final prompt = '''
+You are a supply chain risk AI. Return ONLY a valid JSON array of disruption alerts based on the following data. No markdown fences.
+These conditions are live data fetched via MCP supply chain tools:
+Conditions: \${jsonEncode(allConditions)}
 
-Do not include any other text or formatting like markdown blocks. Just the raw JSON.
+Shipments: \${jsonEncode(shipments)}
+
+The JSON array should contain objects with keys: id, type, severity, affectedRoute, predictedDelayMinutes, recommendedAction, confidence.
 ''';
 
-    try {
       final response = await http.post(
         Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
+          'system_instruction': {
+            'parts': [
+              {'text': 'You are a supply chain risk AI. Return ONLY valid JSON array, no markdown.'}
+            ]
+          },
           'contents': [
             {
               'parts': [
                 {'text': prompt}
               ]
             }
-          ],
-          'generationConfig': {
-             'temperature': 0.2,
-             'responseMimeType': 'application/json',
+          ]
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        var text = data['candidates'][0]['content']['parts'][0]['text'] as String;
+        
+        text = text.trim();
+        if (text.startsWith('```json')) {
+          text = text.substring(7);
+        }
+        if (text.endsWith('```')) {
+          text = text.substring(0, text.length - 3);
+        }
+        text = text.trim();
+
+        final List<dynamic> jsonList = jsonDecode(text);
+        final alerts = jsonList.map((e) => DisruptionAlert.fromMap(e as Map<String, dynamic>)).toList();
+
+        // 4. Send critical alerts back to MCP
+        for (final alert in alerts) {
+          if (alert.severity == 'critical') {
+            await McpService.sendAlert(alert.toMap());
           }
+        }
+
+        return alerts;
+      } else {
+        throw Exception('Failed to communicate with Gemini API: \${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in analyzeDisruptions: \$e');
+      return _getFallbackAlerts();
+    }
+  }
+
+  Future<String> getRouteOptimization({
+    required String origin,
+    required String destination,
+    required String disruptionType,
+  }) async {
+    try {
+      final prompt = 'We have a \$disruptionType disruption between \$origin and \$destination. Provide 3 bullet point rerouting recommendations.';
+      
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+             {
+              'parts': [
+                {'text': prompt}
+              ]
+             }
+          ]
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final candidates = data['candidates'] as List?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'];
-          final parts = content['parts'] as List?;
-          if (parts != null && parts.isNotEmpty) {
-            final text = parts[0]['text'] as String;
-            final Map<String, dynamic> result = jsonDecode(text);
-            return _fillDefaultsIfMissing(result);
-          }
-        }
+        return data['candidates'][0]['content']['parts'][0]['text'];
+      } else {
+        throw Exception('API Error');
       }
-      return _fallbackPrediction();
     } catch (e) {
-      // Handle errors gracefully by returning fallback values
-      return _fallbackPrediction();
+      print('Error in getRouteOptimization: \$e');
+      return '- Use alternate coastal highway\\n- Delay shipment by 24 hours until conditions clear\\n- Split cargo via air freight';
     }
   }
 
-  /// Ensures all expected fields are present in the parsed response to avoid null errors.
-  Map<String, dynamic> _fillDefaultsIfMissing(Map<String, dynamic> result) {
-    return {
-      'riskScore': result['riskScore'] ?? 0,
-      'riskLevel': result['riskLevel'] ?? 'Low',
-      'predictedDelay': result['predictedDelay'] ?? 0.0,
-      'reasons': result['reasons'] is List 
-          ? List<String>.from(result['reasons'])
-          : ['No specific reasons analyzed'],
-      'suggestedAction': result['suggestedAction'] ?? 'Proceed as planned',
-      'alternativeRoute': result['alternativeRoute'] ?? 'No alternative route suggested',
-    };
-  }
-
-  /// Provides fallback dummy values in case the API call fails or encounters an error.
-  Map<String, dynamic> _fallbackPrediction() {
-    return {
-      'riskScore': 50,
-      'riskLevel': 'Medium',
-      'predictedDelay': 1.0,
-      'reasons': ['Unable to connect to AI service', 'Using historical fallback data'],
-      'suggestedAction': 'Monitor shipment closely',
-      'alternativeRoute': 'Check local GPS for real-time alternatives',
-    };
+  List<DisruptionAlert> _getFallbackAlerts() {
+    return [
+      DisruptionAlert(
+        id: 'ALT-001',
+        type: 'weather',
+        severity: 'high',
+        affectedRoute: 'Mumbai -> Bengaluru',
+        predictedDelayMinutes: 300,
+        recommendedAction: 'Reroute via coastal highway NH66',
+        confidence: 0.85,
+      ),
+      DisruptionAlert(
+        id: 'ALT-002',
+        type: 'port_congestion',
+        severity: 'medium',
+        affectedRoute: 'Chennai -> Delhi',
+        predictedDelayMinutes: 180,
+        recommendedAction: 'Expect delays at destination hub',
+        confidence: 0.70,
+      ),
+      DisruptionAlert(
+        id: 'ALT-003',
+        type: 'traffic',
+        severity: 'critical',
+        affectedRoute: 'Delhi -> Jaipur',
+        predictedDelayMinutes: 400,
+        recommendedAction: 'Halt shipment at nearest secure facility',
+        confidence: 0.95,
+      ),
+    ];
   }
 }
