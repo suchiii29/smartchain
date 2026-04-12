@@ -28,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _analysisRun = false;
   DateTime _lastAnalyzed = DateTime.now();
   DateTime _currentTime = DateTime.now();
+  bool _autoRefresh = true;
 
   @override
   void initState() {
@@ -376,8 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-              )
-              )
+              ),
             ] else if (_alerts.isNotEmpty) ...[
               const Text('🤖 AI Disruption Alerts', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -475,8 +475,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     ),
-    );
-  }
+    ],
+  ),
+);
+}
 
   Widget _buildKpiCard(String title, String value, IconData icon, Color color) {
     return Container(

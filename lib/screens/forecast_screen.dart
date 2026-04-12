@@ -12,6 +12,8 @@ class ForecastScreen extends StatefulWidget {
 class _ForecastScreenState extends State<ForecastScreen> {
   final AiService _aiService = AiService();
   bool _hasError = false;
+  bool _isLoading = false;
+  List<Map<String, dynamic>> _predictions = [];
 
   Future<void> _runForecast() async {
     try {
@@ -262,9 +264,6 @@ class _ForecastScreenState extends State<ForecastScreen> {
           ],
         ),
       ),
-    );
-  }
-}  ),
     );
   }
 }

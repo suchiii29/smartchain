@@ -26,7 +26,7 @@ class SmartChainApp extends StatelessWidget {
         primaryColor: const Color(0xFF1A73E8),
         scaffoldBackgroundColor: const Color(0xFF0D1117),
         cardColor: const Color(0xFF161B22),
-        cardTheme: const CardTheme(
+        cardTheme: const CardThemeData(
           shape: RoundedRectangleBorder(
             side: BorderSide(color: Colors.white10),
             borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -90,37 +90,31 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.dashboard_outlined),
                 selectedIcon: Icon(Icons.dashboard),
                 label: Text('Dashboard'),
-                tooltip: 'Dashboard',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.map_outlined),
                 selectedIcon: Icon(Icons.map),
                 label: Text('Route Map'),
-                tooltip: 'Route Map',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.bar_chart_outlined),
                 selectedIcon: Icon(Icons.bar_chart),
                 label: Text('Analytics'),
-                tooltip: 'Analytics',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.eco_outlined, color: Color(0xFF34A853)),
                 selectedIcon: Icon(Icons.eco, color: Color(0xFF34A853)),
                 label: Text('Carbon'),
-                tooltip: 'Carbon',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.history_outlined),
                 selectedIcon: Icon(Icons.history),
                 label: Text('Audit'),
-                tooltip: 'Audit',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.radar_outlined),
                 selectedIcon: Icon(Icons.radar),
                 label: Text('Forecast'),
-                tooltip: 'Forecast',
               ),
             ],
             trailing: Expanded(

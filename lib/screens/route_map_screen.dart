@@ -8,6 +8,18 @@ class RouteMapScreen extends StatefulWidget {
   @override
   _RouteMapScreenState createState() => _RouteMapScreenState();
 }
+class _RouteMapScreenState extends State<RouteMapScreen> {
+  final Map<String, LatLng> _cities = {
+    'Mumbai': const LatLng(19.0760, 72.8777),
+    'Bengaluru': const LatLng(12.9716, 77.5946),
+    'Chennai': const LatLng(13.0827, 80.2707),
+    'Delhi': const LatLng(28.6139, 77.2090),
+    'Kolkata': const LatLng(22.5726, 88.3639),
+    'Hyderabad': const LatLng(17.3850, 78.4867),
+    'Jaipur': const LatLng(26.9124, 75.7873),
+    'Pune': const LatLng(18.5204, 73.8567),
+    'Ahmedabad': const LatLng(23.0225, 72.5714),
+  };
 
   bool _hasError = false;
 
@@ -99,7 +111,7 @@ class RouteMapScreen extends StatefulWidget {
                 ),
               ],
             ),
-          Positioned(
+            Positioned(
             top: 40,
             left: 20,
             child: Container(
@@ -136,6 +148,10 @@ class RouteMapScreen extends StatefulWidget {
         backgroundColor: Colors.blue,
       ),
     );
+  } catch (e) {
+      debugPrint(e.toString());
+      return const SizedBox.shrink();
+    }
   }
 
   Widget _buildLegendItem(Color color, String label) {
@@ -151,3 +167,4 @@ class RouteMapScreen extends StatefulWidget {
     );
   }
 }
+

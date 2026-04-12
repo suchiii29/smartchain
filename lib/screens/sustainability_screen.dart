@@ -11,6 +11,14 @@ class SustainabilityScreen extends StatefulWidget {
 
 class _SustainabilityScreenState extends State<SustainabilityScreen> {
   bool _hasError = false;
+  final AiService _aiService = AiService();
+  List<Shipment> _shipments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _shipments = Shipment.getMockShipments();
+  }
 
   void _optimizeRoute(Shipment shipment) async {
     try {
