@@ -9,61 +9,96 @@ class RouteMapScreen extends StatefulWidget {
   _RouteMapScreenState createState() => _RouteMapScreenState();
 }
 
-class _RouteMapScreenState extends State<RouteMapScreen> {
-  final Map<String, LatLng> _cities = {
-    'Mumbai': const LatLng(19.07, 72.87),
-    'Bengaluru': const LatLng(12.97, 77.59),
-    'Chennai': const LatLng(13.08, 80.27),
-    'Delhi': const LatLng(28.67, 77.22),
-    'Kolkata': const LatLng(22.57, 88.36),
-    'Hyderabad': const LatLng(17.38, 78.48),
-    'Jaipur': const LatLng(26.91, 75.78),
-    'Pune': const LatLng(18.52, 73.85),
-    'Ahmedabad': const LatLng(23.02, 72.57),
-  };
+  bool _hasError = false;
+
+  void _showCityDetails(String city) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1F2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(city, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              const Text('Active Shipments: 3', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const SizedBox(height: 8),
+              const Row(
+                children: [
+                  Text('Risk Level: ', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  Text('LOW', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          FlutterMap(
-            options: const MapOptions(
-              initialCenter: LatLng(20.5, 78.9),
-              initialZoom: 5.0,
-            ),
+    if (_hasError) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0A0E1A),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.smartchain',
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(points: [_cities['Mumbai']!, _cities['Bengaluru']!], color: Colors.red, strokeWidth: 4.0),
-                  Polyline(points: [_cities['Chennai']!, _cities['Delhi']!], color: Colors.orange, strokeWidth: 4.0),
-                  Polyline(points: [_cities['Kolkata']!, _cities['Hyderabad']!], color: Colors.green, strokeWidth: 4.0),
-                  Polyline(points: [_cities['Delhi']!, _cities['Jaipur']!], color: Colors.orange, strokeWidth: 4.0),
-                  Polyline(points: [_cities['Pune']!, _cities['Ahmedabad']!], color: Colors.green, strokeWidth: 4.0),
-                ],
-              ),
-              MarkerLayer(
-                markers: _cities.entries.map((e) => Marker(
-                  point: e.value,
-                  width: 100,
-                  height: 40,
-                  alignment: Alignment.center,
-                  child: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.key), duration: const Duration(seconds: 1))
-                      );
-                    },
-                    child: const Icon(Icons.location_on, color: Colors.blue, size: 24),
-                  ),
-                )).toList(),
-              ),
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
+              const SizedBox(height: 16),
+              const Text('Something went wrong. Please try again.', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 24),
+              ElevatedButton(onPressed: () => setState(() => _hasError = false), child: const Text('Retry')),
             ],
           ),
+        ),
+      );
+    }
+    try {
+      return Scaffold(
+        body: Stack(
+          children: [
+            FlutterMap(
+              options: const MapOptions(
+                initialCenter: LatLng(20.5, 78.9),
+                initialZoom: 5.0,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.smartchain',
+                ),
+                PolylineLayer(
+                  polylines: [
+                    Polyline(points: [_cities['Mumbai']!, _cities['Bengaluru']!], color: Colors.red, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Chennai']!, _cities['Delhi']!], color: Colors.orange, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Kolkata']!, _cities['Hyderabad']!], color: Colors.green, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Delhi']!, _cities['Jaipur']!], color: Colors.orange, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Pune']!, _cities['Ahmedabad']!], color: Colors.green, strokeWidth: 4.0),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: _cities.entries.map((e) => Marker(
+                    point: e.value,
+                    width: 100,
+                    height: 40,
+                    alignment: Alignment.center,
+                    child: GestureDetector(
+                      onTap: () => _showCityDetails(e.key),
+                      child: const Icon(Icons.location_on, color: Colors.blue, size: 24),
+                    ),
+                  )).toList(),
+                ),
+              ],
+            ),
           Positioned(
             top: 40,
             left: 20,

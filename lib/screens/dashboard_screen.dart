@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import '../models/disruption_alert.dart';
 import '../services/ai_service.dart';
 import '../services/mcp_service.dart';
+import '../services/ml_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -15,14 +17,95 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final AiService _aiService = AiService();
   bool _isLoading = false;
   bool _mcpConnected = false;
+  bool _mlConnected = false;
   List<DisruptionAlert> _alerts = [];
   List<Shipment> _shipments = [];
+
+  Timer? _aiTimer;
+  Timer? _clockTimer;
+  bool _showDemoBanner = true;
+  bool _hasError = false;
+  bool _analysisRun = false;
+  DateTime _lastAnalyzed = DateTime.now();
+  DateTime _currentTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _shipments = Shipment.getMockShipments();
-    _checkMcp();
+    _checkConnections();
+    _startClock();
+    _startAiTimer();
+  }
+
+  @override
+  void dispose() {
+    _aiTimer?.cancel();
+    _clockTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startClock() {
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() { _currentTime = DateTime.now(); });
+    });
+  }
+
+  void _startAiTimer() {
+    _aiTimer?.cancel();
+    if (_autoRefresh) {
+      _aiTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted && !_isLoading) {
+          _showRefreshSnackbar();
+          _runAiAnalysis();
+        }
+      });
+    }
+  }
+
+  void _showRefreshSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('🔄 Auto-refreshing supply chain data...'),
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _toggleAutoRefresh(bool val) {
+    setState(() {
+      _autoRefresh = val;
+      if (_autoRefresh) {
+        _startAiTimer();
+      } else {
+        _aiTimer?.cancel();
+      }
+    });
+  }
+
+  String _formatTime(DateTime t) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final month = months[t.month - 1];
+    final p2 = (int x) => x.toString().padLeft(2, '0');
+    return '$month ${t.day}, ${p2(t.hour)}:${p2(t.minute)}:${p2(t.second)}';
+  }
+
+  String _getLastAnalyzedText() {
+    final diff = DateTime.now().difference(_lastAnalyzed).inMinutes;
+    if (diff == 0) return 'Last analyzed: just now';
+    return 'Last analyzed: $diff minute${diff > 1 ? 's' : ''} ago';
+  }
+
+  Future<void> _checkConnections() async {
+    final mcp = await McpService.checkConnection();
+    final ml = await MlService.checkConnection();
+    if (mounted) {
+      setState(() {
+        _mcpConnected = mcp;
+        _mlConnected = ml;
+      });
+    }
   }
 
   Future<void> _checkMcp() async {
@@ -35,21 +118,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _runAiAnalysis() async {
-    setState(() {
-      _isLoading = true;
-      _alerts = [];
-    });
-
-    final alerts = await _aiService.analyzeDisruptions(
-      shipments: _shipments.map((e) => e.toMap()).toList(),
-      conditions: [], // Live conditions fetched inside AiService via MCP
-    );
-
-    if (mounted) {
+    try {
       setState(() {
-        _alerts = alerts;
-        _isLoading = false;
+        _isLoading = true;
+        _alerts = [];
+        _hasError = false;
       });
+
+      final alerts = await _aiService.analyzeDisruptions(
+        shipments: _shipments.map((e) => e.toMap()).toList(),
+        conditions: [], // Live conditions fetched inside AiService via MCP
+      );
+
+      if (mounted) {
+        setState(() {
+          _alerts = alerts;
+          _isLoading = false;
+          _lastAnalyzed = DateTime.now();
+          _analysisRun = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -144,6 +239,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           Center(
+            child: Text(_formatTime(_currentTime), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 16),
+          Row(
+            children: [
+              const Text('Auto', style: TextStyle(color: Colors.white70)),
+              Switch(
+                value: _autoRefresh,
+                onChanged: _toggleAutoRefresh,
+                activeColor: Colors.blue,
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -156,6 +266,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text('MCP', style: TextStyle(color: _mcpConnected ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
                   const SizedBox(width: 4),
                   Icon(_mcpConnected ? Icons.circle : Icons.circle_outlined, color: _mcpConnected ? Colors.green : Colors.red, size: 10),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _mlConnected ? Colors.blue.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _mlConnected ? Colors.blue : Colors.red),
+              ),
+              child: Row(
+                children: [
+                  Text('ML', style: TextStyle(color: _mlConnected ? Colors.blue : Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Icon(_mlConnected ? Icons.circle : Icons.circle_outlined, color: _mlConnected ? Colors.blue : Colors.red, size: 10),
                 ],
               ),
             ),
@@ -175,11 +303,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: _hasError 
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                  const SizedBox(height: 16),
+                  const Text('Something went wrong. Please try again.', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: _runAiAnalysis, child: const Text('Retry')),
+                ],
+              ),
+            )
+          : Column(
+              children: [
+                if (_showDemoBanner)
+                  Material(
+                    color: Colors.yellow,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.black, size: 20),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              '🎯 Demo Mode — Simulated data for presentation',
+                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.black, size: 20),
+                            onPressed: () => setState(() => _showDemoBanner = false),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+            Text(_getLastAnalyzedText(), style: const TextStyle(color: Colors.white54, fontSize: 13, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 16),
             // KPI Cards row
             Row(
               children: [
@@ -208,6 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               )
+              )
             ] else if (_alerts.isNotEmpty) ...[
               const Text('🤖 AI Disruption Alerts', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -217,23 +387,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 itemCount: _alerts.length,
                 itemBuilder: (ctx, i) {
                   final alert = _alerts[i];
-                  return Card(
-                    color: const Color(0xFF1A1F2E),
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      onTap: () => _showAlertDetails(alert),
-                      leading: CircleAvatar(
-                        backgroundColor: _getSeverityColor(alert.severity).withOpacity(0.2),
-                        child: Icon(Icons.warning, color: _getSeverityColor(alert.severity)),
+                  return AnimatedOpacity(
+                    opacity: 1.0,
+                    duration: const Duration(milliseconds: 500),
+                    child: Card(
+                      color: const Color(0xFF1A1F2E),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        onTap: () => _showAlertDetails(alert),
+                        leading: CircleAvatar(
+                          backgroundColor: _getSeverityColor(alert.severity).withOpacity(0.2),
+                          child: Icon(Icons.warning, color: _getSeverityColor(alert.severity)),
+                        ),
+                        title: Text(alert.affectedRoute, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        subtitle: Text(alert.recommendedAction, style: const TextStyle(color: Colors.white70)),
+                        trailing: Text('+${alert.predictedDelayMinutes}m', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
-                      title: Text(alert.affectedRoute, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      subtitle: Text(alert.recommendedAction, style: const TextStyle(color: Colors.white70)),
-                      trailing: Text('+${alert.predictedDelayMinutes}m', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 30),
+            ] else if (_analysisRun) ...[
+               Center(
+                 child: Padding(
+                   padding: const EdgeInsets.symmetric(vertical: 40),
+                   child: Column(
+                     children: const [
+                       Icon(Icons.check_circle_outline, color: Colors.green, size: 64),
+                       SizedBox(height: 16),
+                       Text('✅ All routes operating normally', style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)),
+                     ],
+                   ),
+                 ),
+               ),
+               const SizedBox(height: 30),
             ],
 
             // Active Shipments Table
@@ -254,11 +442,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   final color = _getStatusColor(shipment.status);
                   return ListTile(
                     title: Text('${shipment.origin} → ${shipment.destination}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                    subtitle: Row(
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(shipment.id, style: const TextStyle(fontFamily: 'monospace', color: Colors.white54, fontSize: 12)),
-                        const SizedBox(width: 8),
-                        Text('• ${shipment.cargoType}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                        Row(
+                          children: [
+                            Text(shipment.id, style: const TextStyle(fontFamily: 'monospace', color: Colors.white54, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            Text('• ${shipment.cargoType}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'ML Prediction: +${(shipment.id.length * 3) % 45 + 10}m delay risk',
+                          style: const TextStyle(color: Colors.orangeAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                     trailing: Container(
@@ -276,6 +474,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/route_map_screen.dart';
 import 'screens/analytics_screen.dart';
+import 'screens/role_selection_screen.dart';
+import 'screens/sustainability_screen.dart';
+import 'screens/audit_trail_screen.dart';
+import 'screens/forecast_screen.dart';
 
 void main() {
   runApp(const SmartChainApp());
@@ -17,11 +22,19 @@ class SmartChainApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFF4FC3F7),
-        scaffoldBackgroundColor: const Color(0xFF0A0E1A),
+        fontFamily: GoogleFonts.inter().fontFamily,
+        primaryColor: const Color(0xFF1A73E8),
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
+        cardColor: const Color(0xFF161B22),
+        cardTheme: const CardTheme(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: Colors.white10),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+        ),
         useMaterial3: true,
       ),
-      home: const AppShell(),
+      home: const RoleSelectionScreen(),
     );
   }
 }
@@ -40,6 +53,9 @@ class _AppShellState extends State<AppShell> {
     DashboardScreen(),
     RouteMapScreen(),
     AnalyticsScreen(),
+    SustainabilityScreen(),
+    AuditTrailScreen(),
+    ForecastScreen(),
   ];
 
   @override
@@ -74,18 +90,48 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.dashboard_outlined),
                 selectedIcon: Icon(Icons.dashboard),
                 label: Text('Dashboard'),
+                tooltip: 'Dashboard',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.map_outlined),
                 selectedIcon: Icon(Icons.map),
                 label: Text('Route Map'),
+                tooltip: 'Route Map',
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.bar_chart_outlined),
                 selectedIcon: Icon(Icons.bar_chart),
                 label: Text('Analytics'),
+                tooltip: 'Analytics',
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.eco_outlined, color: Color(0xFF34A853)),
+                selectedIcon: Icon(Icons.eco, color: Color(0xFF34A853)),
+                label: Text('Carbon'),
+                tooltip: 'Carbon',
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history),
+                label: Text('Audit'),
+                tooltip: 'Audit',
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.radar_outlined),
+                selectedIcon: Icon(Icons.radar),
+                label: Text('Forecast'),
+                tooltip: 'Forecast',
               ),
             ],
+            trailing: Expanded(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20.0),
+                  child: Text('v1.0.0', style: TextStyle(color: Colors.white24, fontSize: 10)),
+                ),
+              ),
+            ),
           ),
           const VerticalDivider(thickness: 1, width: 1, color: Colors.white12),
           Expanded(

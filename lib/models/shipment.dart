@@ -7,6 +7,8 @@ class Shipment {
   final String cargoType;
   final DateTime eta;
   final int delayMinutes;
+  final double carbonKg;
+  final String vehicleType;
 
   Shipment({
     required this.id,
@@ -17,6 +19,8 @@ class Shipment {
     required this.cargoType,
     required this.eta,
     required this.delayMinutes,
+    required this.carbonKg,
+    required this.vehicleType,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,8 @@ class Shipment {
       'cargoType': cargoType,
       'eta': eta.toIso8601String(),
       'delayMinutes': delayMinutes,
+      'carbonKg': carbonKg,
+      'vehicleType': vehicleType,
     };
   }
 
@@ -44,6 +50,8 @@ class Shipment {
         cargoType: 'Electronics',
         eta: now.add(const Duration(days: 1, hours: 2)),
         delayMinutes: 0,
+        carbonKg: 180.0,
+        vehicleType: 'truck',
       ),
       Shipment(
         id: 'SHP-CHN-DEL-002',
@@ -54,6 +62,8 @@ class Shipment {
         cargoType: 'Auto Parts',
         eta: now.add(const Duration(days: 2, hours: 5)),
         delayMinutes: 180,
+        carbonKg: 105.0,
+        vehicleType: 'rail',
       ),
       Shipment(
         id: 'SHP-KOL-HYD-003',
@@ -64,6 +74,8 @@ class Shipment {
         cargoType: 'Textiles',
         eta: now.add(const Duration(days: 1, hours: 14)),
         delayMinutes: 0,
+        carbonKg: 210.0,
+        vehicleType: 'truck',
       ),
       Shipment(
         id: 'SHP-DEL-JAI-004',
@@ -74,6 +86,8 @@ class Shipment {
         cargoType: 'Pharmaceuticals',
         eta: now.add(const Duration(hours: 12)),
         delayMinutes: 300,
+        carbonKg: 87.0,
+        vehicleType: 'truck',
       ),
       Shipment(
         id: 'SHP-PUN-AMD-005',
@@ -84,6 +98,8 @@ class Shipment {
         cargoType: 'Machinery',
         eta: now.add(const Duration(days: 1)),
         delayMinutes: 0,
+        carbonKg: 32.5,
+        vehicleType: 'rail',
       ),
       Shipment(
         id: 'SHP-BLR-CHN-006',
@@ -94,6 +110,8 @@ class Shipment {
         cargoType: 'Perishables',
         eta: now.add(const Duration(hours: 8)),
         delayMinutes: 60,
+        carbonKg: 540.0,
+        vehicleType: 'air',
       ),
       Shipment(
         id: 'SHP-AMD-MUM-007',
@@ -104,6 +122,8 @@ class Shipment {
         cargoType: 'Chemicals',
         eta: now.add(const Duration(hours: 10)),
         delayMinutes: 0,
+        carbonKg: 138.0,
+        vehicleType: 'truck',
       ),
       Shipment(
         id: 'SHP-HYD-DEL-008',
@@ -114,6 +134,8 @@ class Shipment {
         cargoType: 'Electronics',
         eta: now.add(const Duration(days: 2, hours: 1)),
         delayMinutes: 0,
+        carbonKg: 72.0,
+        vehicleType: 'truck',
       ),
     ];
   }
