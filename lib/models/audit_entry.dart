@@ -18,4 +18,32 @@ class AuditEntry {
     required this.mcpToolsCalled,
     required this.confidence,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'timestamp': timestamp.toIso8601String(),
+      'decisionType': decisionType,
+      'aiModel': aiModel,
+      'inputSummary': inputSummary,
+      'outputDecision': outputDecision,
+      'mcpToolsCalled': mcpToolsCalled,
+      'confidence': confidence,
+    };
+  }
+
+  factory AuditEntry.fromMap(Map<String, dynamic> map) {
+    return AuditEntry(
+      id: map['id'] ?? '',
+      timestamp: map['timestamp'] != null 
+          ? DateTime.parse(map['timestamp']) 
+          : DateTime.now(),
+      decisionType: map['decisionType'] ?? '',
+      aiModel: map['aiModel'] ?? '',
+      inputSummary: map['inputSummary'] ?? '',
+      outputDecision: map['outputDecision'] ?? '',
+      mcpToolsCalled: List<String>.from(map['mcpToolsCalled'] ?? []),
+      confidence: (map['confidence'] ?? 0.0).toDouble(),
+    );
+  }
 }

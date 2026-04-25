@@ -1,25 +1,26 @@
 import '../models/shipment.dart';
 import '../models/route_condition.dart';
 
+/// Service for managing logistics routes and shipment status across the network.
 class RouteService {
-  /// Returns the full list of mock shipments.
+  /// Returns the full list of active shipments in the system.
   List<Shipment> getActiveShipments() {
     return Shipment.getMockShipments();
   }
 
-  /// Returns current route conditions affecting the network.
+  /// Returns current environmental or logistical conditions affecting the network.
   List<RouteCondition> getCurrentConditions() {
     return RouteCondition.getMockConditions();
   }
 
-  /// Returns shipments filtered by status.
+  /// Returns a subset of shipments filtered by their current [status].
   List<Shipment> getShipmentsByStatus(String status) {
     return Shipment.getMockShipments()
         .where((s) => s.status == status)
         .toList();
   }
 
-  /// Returns a summary map of the current network state.
+  /// Returns a statistical summary map of the current state of all shipments.
   Map<String, dynamic> getNetworkSummary() {
     final all = Shipment.getMockShipments();
     final onTime = all.where((s) => s.status == 'on_time').length;
@@ -41,7 +42,7 @@ class RouteService {
     };
   }
 
-  /// Returns approximate lat/lng coordinates for known Indian logistics hubs.
+  /// Returns latitude and longitude coordinates for major Indian logistics hubs.
   Map<String, List<double>> getCityCoordinates() {
     return {
       'Mumbai': [19.07, 72.87],

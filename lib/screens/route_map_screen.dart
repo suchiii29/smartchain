@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../theme/app_colors.dart';
+import '../constants/app_strings.dart';
+import '../widgets/error_screen.dart';
 
 class RouteMapScreen extends StatefulWidget {
   const RouteMapScreen({Key? key}) : super(key: key);
@@ -8,6 +11,7 @@ class RouteMapScreen extends StatefulWidget {
   @override
   _RouteMapScreenState createState() => _RouteMapScreenState();
 }
+
 class _RouteMapScreenState extends State<RouteMapScreen> {
   final Map<String, LatLng> _cities = {
     'Mumbai': const LatLng(19.0760, 72.8777),
@@ -26,7 +30,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
   void _showCityDetails(String city) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A1F2E),
+      backgroundColor: AppColors.cardAlt,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -37,14 +41,14 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(city, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(city, style: const TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              const Text('Active Shipments: 3', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const Text('Active Shipments: 3', style: TextStyle(color: AppColors.white70, fontSize: 16)),
               const SizedBox(height: 8),
               const Row(
                 children: [
-                  Text('Risk Level: ', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                  Text('LOW', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+                   Text('Risk Level: ', style: TextStyle(color: AppColors.white70, fontSize: 16)),
+                   Text('LOW', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -57,23 +61,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_hasError) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0A0E1A),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 64),
-              const SizedBox(height: 16),
-              const Text('Something went wrong. Please try again.', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: () => setState(() => _hasError = false), child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
     try {
       return Scaffold(
         body: Stack(
@@ -90,11 +77,11 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                 ),
                 PolylineLayer(
                   polylines: [
-                    Polyline(points: [_cities['Mumbai']!, _cities['Bengaluru']!], color: Colors.red, strokeWidth: 4.0),
-                    Polyline(points: [_cities['Chennai']!, _cities['Delhi']!], color: Colors.orange, strokeWidth: 4.0),
-                    Polyline(points: [_cities['Kolkata']!, _cities['Hyderabad']!], color: Colors.green, strokeWidth: 4.0),
-                    Polyline(points: [_cities['Delhi']!, _cities['Jaipur']!], color: Colors.orange, strokeWidth: 4.0),
-                    Polyline(points: [_cities['Pune']!, _cities['Ahmedabad']!], color: Colors.green, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Mumbai']!, _cities['Bengaluru']!], color: AppColors.error, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Chennai']!, _cities['Delhi']!], color: AppColors.warning, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Kolkata']!, _cities['Hyderabad']!], color: AppColors.success, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Delhi']!, _cities['Jaipur']!], color: AppColors.warning, strokeWidth: 4.0),
+                    Polyline(points: [_cities['Pune']!, _cities['Ahmedabad']!], color: AppColors.success, strokeWidth: 4.0),
                   ],
                 ),
                 MarkerLayer(
@@ -103,9 +90,13 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                     width: 100,
                     height: 40,
                     alignment: Alignment.center,
-                    child: GestureDetector(
-                      onTap: () => _showCityDetails(e.key),
-                      child: const Icon(Icons.location_on, color: Colors.blue, size: 24),
+                    child: Semantics(
+                      label: 'Marker for ${e.key} city. Tap for logistics details.',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () => _showCityDetails(e.key),
+                        child: const Icon(Icons.location_on, color: AppColors.primary, size: 24),
+                      ),
                     ),
                   )).toList(),
                 ),
@@ -117,40 +108,44 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2E).withOpacity(0.9),
+                color: AppColors.cardAlt.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Route Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const Text('Route Status', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  _buildLegendItem(Colors.green, 'On Time'),
-                  _buildLegendItem(Colors.orange, 'Delayed'),
-                  _buildLegendItem(Colors.red, 'Critical'),
+                  _buildLegendItem(AppColors.success, 'On Time'),
+                  _buildLegendItem(AppColors.warning, 'Delayed'),
+                  _buildLegendItem(AppColors.error, 'Critical'),
                 ],
               ),
             ),
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('2 critical routes detected by AI', style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.red,
-            ),
-          );
-        },
-        label: const Text('Analyze Routes', style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.analytics, color: Colors.white),
-        backgroundColor: Colors.blue,
+      floatingActionButton: Semantics(
+        label: 'Analyze detected routes for disruption risks',
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('2 critical routes detected by AI', style: TextStyle(color: AppColors.white)),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          },
+          label: const Text('Analyze Routes', style: TextStyle(color: AppColors.white)),
+          icon: const Icon(Icons.analytics, color: AppColors.white),
+          backgroundColor: AppColors.primary,
+          tooltip: 'Analyze current logistics routes',
+        ),
       ),
     );
   } catch (e) {
       debugPrint(e.toString());
-      return const SizedBox.shrink();
+      return ErrorScreen(message: e.toString());
     }
   }
 
@@ -161,10 +156,9 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
         children: [
           Container(width: 16, height: 4, color: color),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(label, style: const TextStyle(color: AppColors.white70, fontSize: 12)),
         ],
       ),
     );
   }
 }
-

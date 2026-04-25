@@ -1,35 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/route_map_screen.dart';
 import 'screens/analytics_screen.dart';
-import 'screens/role_selection_screen.dart';
 import 'screens/sustainability_screen.dart';
 import 'screens/audit_trail_screen.dart';
 import 'screens/forecast_screen.dart';
+import 'screens/role_selection_screen.dart';
+import 'theme/app_colors.dart';
+import 'constants/app_strings.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
   runApp(const SmartChainApp());
 }
 
 class SmartChainApp extends StatelessWidget {
-  const SmartChainApp({Key? key}) : super(key: key);
+  const SmartChainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SmartChain AI',
+      title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
         fontFamily: GoogleFonts.inter().fontFamily,
-        primaryColor: const Color(0xFF1A73E8),
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
-        cardColor: const Color(0xFF161B22),
-        cardTheme: const CardThemeData(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.surface,
+        cardColor: AppColors.card,
+        cardTheme: CardThemeData(
           shape: RoundedRectangleBorder(
-            side: BorderSide(color: Colors.white10),
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            side: BorderSide(color: AppColors.white.withValues(alpha: 0.1)),
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
           ),
         ),
         useMaterial3: true,
@@ -64,7 +77,7 @@ class _AppShellState extends State<AppShell> {
       body: Row(
         children: [
           NavigationRail(
-            backgroundColor: const Color(0xFF0A0E1A),
+            backgroundColor: AppColors.surfaceDark,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (int index) {
               setState(() {
@@ -72,16 +85,16 @@ class _AppShellState extends State<AppShell> {
               });
             },
             labelType: NavigationRailLabelType.all,
-            selectedIconTheme: const IconThemeData(color: Color(0xFF4FC3F7)),
-            selectedLabelTextStyle: const TextStyle(color: Color(0xFF4FC3F7)),
-            unselectedIconTheme: const IconThemeData(color: Colors.white54),
-            unselectedLabelTextStyle: const TextStyle(color: Colors.white54),
-            leading: Column(
-              children: const [
+            selectedIconTheme: const IconThemeData(color: AppColors.primaryLight),
+            selectedLabelTextStyle: const TextStyle(color: AppColors.primaryLight),
+            unselectedIconTheme: const IconThemeData(color: AppColors.white38),
+            unselectedLabelTextStyle: const TextStyle(color: AppColors.white38),
+            leading: const Column(
+              children: [
                 SizedBox(height: 16),
-                Icon(Icons.local_shipping, color: Colors.cyan, size: 32),
+                Icon(Icons.local_shipping, color: AppColors.primaryLight, size: 32),
                 SizedBox(height: 8),
-                Text('SmartChain', style: TextStyle(color: Colors.cyan, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text('SmartChain', style: TextStyle(color: AppColors.primaryLight, fontSize: 11, fontWeight: FontWeight.bold)),
                 SizedBox(height: 20),
               ],
             ),
@@ -102,8 +115,8 @@ class _AppShellState extends State<AppShell> {
                 label: Text('Analytics'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.eco_outlined, color: Color(0xFF34A853)),
-                selectedIcon: Icon(Icons.eco, color: Color(0xFF34A853)),
+                icon: Icon(Icons.eco_outlined, color: AppColors.success),
+                selectedIcon: Icon(Icons.eco, color: AppColors.success),
                 label: Text('Carbon'),
               ),
               NavigationRailDestination(
@@ -121,13 +134,13 @@ class _AppShellState extends State<AppShell> {
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 20.0),
-                  child: Text('v1.0.0', style: TextStyle(color: Colors.white24, fontSize: 10)),
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  child: Text('v1.0.0', style: TextStyle(color: AppColors.white.withValues(alpha: 0.24), fontSize: 10)),
                 ),
               ),
             ),
           ),
-          const VerticalDivider(thickness: 1, width: 1, color: Colors.white12),
+          VerticalDivider(thickness: 1, width: 1, color: AppColors.white.withValues(alpha: 0.12)),
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,

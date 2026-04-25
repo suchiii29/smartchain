@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195706072392",
+    "project_id": "smartchain-project",
+    "storage_bucket": "smartchain-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195706072392:android:30a561140f898469ce977d",
+        "android_client_info": {
+          "package_name": "com.example.frontend_web"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMS4m5BvrECNLiFY1VmjGsye-LzfSZA8M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

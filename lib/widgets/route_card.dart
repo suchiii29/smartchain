@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../models/shipment.dart';
+import '../theme/app_colors.dart';
 
 class RouteCard extends StatelessWidget {
   final Shipment shipment;
   final VoidCallback? onTap;
 
-  const RouteCard({Key? key, required this.shipment, this.onTap}) : super(key: key);
+  const RouteCard({super.key, required this.shipment, this.onTap});
 
   Color get _statusColor {
     switch (shipment.status) {
-      case 'on_time': return Colors.green;
-      case 'delayed': return Colors.orange;
-      case 'critical': return Colors.red;
-      default: return Colors.grey;
+      case 'on_time': return AppColors.success;
+      case 'delayed': return AppColors.warning;
+      case 'critical': return AppColors.error;
+      default: return AppColors.white38;
     }
   }
 
@@ -31,11 +32,11 @@ class RouteCard extends StatelessWidget {
         '${shipment.eta.day}/${shipment.eta.month} ${shipment.eta.hour.toString().padLeft(2, '0')}:${shipment.eta.minute.toString().padLeft(2, '0')}';
 
     return Card(
-      color: const Color(0xFF1A1F2E),
+      color: AppColors.cardAlt,
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: _statusColor.withOpacity(0.25)),
+        side: BorderSide(color: _statusColor.withValues(alpha: 0.25)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -53,7 +54,7 @@ class RouteCard extends StatelessWidget {
                     child: Text(
                       '${shipment.origin}  →  ${shipment.destination}',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -62,7 +63,7 @@ class RouteCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _statusColor.withOpacity(0.2),
+                      color: _statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -79,23 +80,23 @@ class RouteCard extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _infoChip(Icons.badge, shipment.id, Colors.white54),
+                  _infoChip(Icons.badge, shipment.id, AppColors.white70),
                   const SizedBox(width: 10),
-                  _infoChip(Icons.category, shipment.cargoType, Colors.white54),
+                  _infoChip(Icons.category, shipment.cargoType, AppColors.white70),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _infoChip(Icons.business, shipment.carrier, Colors.white38),
+                  _infoChip(Icons.business, shipment.carrier, AppColors.white38),
                   Row(
                     children: [
-                      const Icon(Icons.schedule, size: 14, color: Colors.white38),
+                      const Icon(Icons.schedule, size: 14, color: AppColors.white38),
                       const SizedBox(width: 4),
                       Text(
                         'ETA $etaFormatted',
-                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                        style: const TextStyle(color: AppColors.white38, fontSize: 12),
                       ),
                     ],
                   ),
@@ -107,7 +108,7 @@ class RouteCard extends StatelessWidget {
                   child: Text(
                     '+${shipment.delayMinutes} min delay',
                     style: const TextStyle(
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),

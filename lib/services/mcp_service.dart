@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+/// Service for interacting with the Model Context Protocol (MCP) server.
+/// 
+/// Facilitates communication with local supply chain tools and live condition monitoring.
 class McpService {
   static const _baseUrl = 'http://localhost:3001';
   static bool _isMcpConnected = false;
 
+  /// Returns whether the MCP server is currently reachable.
   static bool get isConnected => _isMcpConnected;
 
+  /// Checks the connectivity to the MCP server.
   static Future<bool> checkConnection() async {
     try {
-      final response = await http.get(Uri.parse('\$_baseUrl/conditions')).timeout(const Duration(seconds: 3));
+      final response = await http.get(Uri.parse('$_baseUrl/conditions')).timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         _isMcpConnected = true;
         return true;
@@ -21,15 +26,18 @@ class McpService {
     return false;
   }
 
+  /// Fetches live supply chain conditions from the MCP server.
+  /// 
+  /// Returns a list of environmental and logistical descriptions.
   static Future<List<String>> getSupplyChainConditions() async {
     try {
-      final response = await http.get(Uri.parse('\$_baseUrl/conditions')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('$_baseUrl/conditions')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((e) => e['description'] as String).toList();
       }
     } catch (e) {
-      print('Error fetching MCP conditions: \$e');
+      print('Error fetching MCP conditions: $e');
     }
     
     // Fallback conditions
@@ -40,10 +48,11 @@ class McpService {
     ];
   }
 
+  /// Sends a generated disruption alert back to the MCP server for external processing.
   static Future<void> sendAlert(Map<String, dynamic> alert) async {
     try {
       await http.post(
-        Uri.parse('\$_baseUrl/alerts'),
+        Uri.parse('$_baseUrl/alerts'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(alert),
       ).timeout(const Duration(seconds: 5));

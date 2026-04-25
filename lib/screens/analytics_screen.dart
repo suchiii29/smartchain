@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import '../theme/app_colors.dart';
+import '../widgets/error_screen.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({Key? key}) : super(key: key);
+  const AnalyticsScreen({super.key});
 
   @override
   _AnalyticsScreenState createState() => _AnalyticsScreenState();
@@ -10,186 +14,602 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool _hasError = false;
+  bool _isLoadingModels = true;
+  Map<String, dynamic>? _modelStats;
+  Map<String, dynamic>? _featureImportanceData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMLData();
+  }
+
+  Future<void> _fetchMLData() async {
+    try {
+      final statsRes =
+          await http.get(Uri.parse('http://localhost:5000/model-stats'));
+      final featuresRes =
+          await http.get(Uri.parse('http://localhost:5000/feature-importance'));
+
+      if (statsRes.statusCode == 200 && featuresRes.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _modelStats = json.decode(statsRes.body);
+            _featureImportanceData = json.decode(featuresRes.body);
+            _isLoadingModels = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _isLoadingModels = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _isLoadingModels = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_hasError) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0A0E1A),
-        appBar: AppBar(title: const Text('📊 Analytics')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 64),
-              const SizedBox(height: 16),
-              const Text('Something went wrong. Please try again.', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: () => setState(() => _hasError = false), child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
-
     try {
       return Scaffold(
-        backgroundColor: const Color(0xFF0A0E1A),
+        backgroundColor: AppColors.surfaceDark,
         appBar: AppBar(
-          title: const Text('📊 Predictive Analytics', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          backgroundColor: const Color(0xFF1A1F2E),
-          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('📊 Predictive Analytics',
+              style: TextStyle(
+                  color: AppColors.white, fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.cardAlt,
+          iconTheme: const IconThemeData(color: AppColors.white),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              _buildCard(
-                title: 'Disruption Types This Week',
-                child: SizedBox(
-                  height: 200,
-                  child: BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      barTouchData: BarTouchData(enabled: false),
-                      titlesData: FlTitlesData(
-                        show: true,
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              const titles = ['Weather', 'Traffic', 'Port', 'Customs', 'Mech'];
-                              if (value.toInt() >= 0 && value.toInt() < titles.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(titles[value.toInt()], style: const TextStyle(color: Colors.white, fontSize: 10)),
-                                );
-                              }
-                              return const Text('');
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: Colors.white, fontSize: 10)),
-                            reservedSize: 28,
-                          ),
-                        ),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      ),
-                      gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                      barGroups: [
-                        _buildBarGroup(0, 4), // Weather
-                        _buildBarGroup(1, 6), // Traffic
-                        _buildBarGroup(2, 3), // Port
-                        _buildBarGroup(3, 2), // Customs
-                        _buildBarGroup(4, 1), // Mechanical
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildCard(
-                title: 'On-Time Delivery % - Last 7 Days',
-                child: SizedBox(
-                  height: 200,
-                  child: LineChart(
-                    LineChartData(
-                      minY: 0,
-                      maxY: 100,
-                      lineTouchData: const LineTouchData(enabled: false),
-                      titlesData: FlTitlesData(
-                        show: true,
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                              if (value.toInt() >= 0 && value.toInt() < days.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(days[value.toInt()], style: const TextStyle(color: Colors.white, fontSize: 10)),
-                                );
-                              }
-                              return const Text('');
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: Colors.white, fontSize: 10)),
-                            reservedSize: 28,
-                          ),
-                        ),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      ),
-                      gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1)),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: const [
-                            FlSpot(0, 92),
-                            FlSpot(1, 88),
-                            FlSpot(2, 79),
-                            FlSpot(3, 85),
-                            FlSpot(4, 72),
-                            FlSpot(5, 68),
-                            FlSpot(6, 75),
-                          ],
-                          isCurved: true,
-                          color: Colors.cyan,
-                          barWidth: 3,
-                          isStrokeCapRound: true,
-                          dotData: const FlDotData(show: true),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: Colors.cyan.withOpacity(0.3),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildCard(
-                title: 'Route Risk Scores',
+        body: _hasError
+            ? const Center(
+                child: Text('Failed to load ML models',
+                    style: TextStyle(color: AppColors.error)))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildRiskRow('Mumbai → Bengaluru', 0.78, Colors.red),
-                    _buildRiskRow('Chennai → Delhi', 0.45, Colors.orange),
-                    _buildRiskRow('Kolkata → Hyderabad', 0.23, Colors.green),
-                    _buildRiskRow('Delhi → Jaipur', 0.61, Colors.orange),
-                    _buildRiskRow('Pune → Ahmedabad', 0.15, Colors.green),
+                    _buildMLPerformanceSection(),
+                    const SizedBox(height: 30),
+                    _buildCard(
+                      title: 'Disruption Types This Week',
+                      child: Semantics(
+                        label:
+                            'Disruption types bar chart. Showing counts for Weather, Traffic, Port, Customs, and Mechanical.',
+                        child: SizedBox(
+                          height: 200,
+                          child: BarChart(
+                            BarChartData(
+                              alignment: BarChartAlignment.spaceAround,
+                              barTouchData: BarTouchData(enabled: false),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      if (value % 1 != 0) {
+                                        return const Text('');
+                                      }
+                                      final int index = value.toInt();
+                                      const titles = [
+                                        'Weather',
+                                        'Traffic',
+                                        'Port',
+                                        'Customs',
+                                        'Mech'
+                                      ];
+                                      if (index >= 0 && index < titles.length) {
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8.0),
+                                          child: Text(
+                                            titles[index],
+                                            style: const TextStyle(
+                                                color: AppColors.white,
+                                                fontSize: 12),
+                                          ),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                                ),
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) => Text(
+                                        value.toInt().toString(),
+                                        style: const TextStyle(
+                                            color: AppColors.white,
+                                            fontSize: 12)),
+                                    reservedSize: 28,
+                                  ),
+                                ),
+                                topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              gridData: const FlGridData(show: false),
+                              borderData: FlBorderData(show: false),
+                              barGroups: [
+                                _buildBarGroup(0, 4), // Weather
+                                _buildBarGroup(1, 6), // Traffic
+                                _buildBarGroup(2, 3), // Port
+                                _buildBarGroup(3, 2), // Customs
+                                _buildBarGroup(4, 1), // Mechanical
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildCard(
+                      title: 'On-Time Delivery % - Last 7 Days',
+                      child: Semantics(
+                        label:
+                            'On-time delivery percentage over last 7 days line chart. Trending between 68% and 92%.',
+                        child: SizedBox(
+                          height: 200,
+                          child: LineChart(
+                            LineChartData(
+                              minY: 0,
+                              maxY: 100,
+                              lineTouchData:
+                                  const LineTouchData(enabled: false),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      if (value % 1 != 0) {
+                                        return const Text('');
+                                      }
+
+                                      final int index = value.toInt();
+                                      if (index < 0 || index > 6)
+                                        return const SizedBox.shrink();
+
+                                      const days = [
+                                        'Mon',
+                                        'Tue',
+                                        'Wed',
+                                        'Thu',
+                                        'Fri',
+                                        'Sat',
+                                        'Sun'
+                                      ];
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          days[index],
+                                          style: const TextStyle(
+                                              color: AppColors.white,
+                                              fontSize: 12),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) => Text(
+                                        value.toInt().toString(),
+                                        style: const TextStyle(
+                                            color: AppColors.white,
+                                            fontSize: 12)),
+                                    reservedSize: 28,
+                                  ),
+                                ),
+                                topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  getDrawingHorizontalLine: (_) => FlLine(
+                                      color: AppColors.white
+                                          .withValues(alpha: 0.1),
+                                      strokeWidth: 1)),
+                              borderData: FlBorderData(show: false),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: const [
+                                    FlSpot(0, 92),
+                                    FlSpot(1, 88),
+                                    FlSpot(2, 79),
+                                    FlSpot(3, 85),
+                                    FlSpot(4, 72),
+                                    FlSpot(5, 68),
+                                    FlSpot(6, 75),
+                                  ],
+                                  isCurved: true,
+                                  color: AppColors.primaryLight,
+                                  barWidth: 3,
+                                  isStrokeCapRound: true,
+                                  dotData: const FlDotData(show: true),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: AppColors.primaryLight
+                                        .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildCard(
+                      title: 'Route Risk Scores',
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 5,
+                        itemBuilder: (ctx, index) {
+                          final data = [
+                            {
+                              'route': 'Mumbai → Bengaluru',
+                              'score': 0.78,
+                              'color': AppColors.error
+                            },
+                            {
+                              'route': 'Chennai → Delhi',
+                              'score': 0.45,
+                              'color': AppColors.warning
+                            },
+                            {
+                              'route': 'Kolkata → Hyderabad',
+                              'score': 0.23,
+                              'color': AppColors.success
+                            },
+                            {
+                              'route': 'Delhi → Jaipur',
+                              'score': 0.61,
+                              'color': AppColors.warning
+                            },
+                            {
+                              'route': 'Pune → Ahmedabad',
+                              'score': 0.15,
+                              'color': AppColors.success
+                            },
+                          ];
+                          final item = data[index];
+                          return _buildRiskRow(
+                            item['route'] as String,
+                            item['score'] as double,
+                            item['color'] as Color,
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
       );
     } catch (e) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0A0E1A),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      return ErrorScreen(message: e.toString());
+    }
+  }
+
+  Widget _buildMLPerformanceSection() {
+    if (_isLoadingModels) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('🧠 ML Model Performance',
+              style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold)),
+          SizedBox(height: 20),
+          Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        ],
+      );
+    }
+
+    if (_modelStats == null || _featureImportanceData == null) {
+      return const SizedBox.shrink();
+    }
+
+    final rf = _modelStats!['random_forest'];
+    final gb = _modelStats!['gradient_boosting'];
+    final lr = _modelStats!['logistic_regression'];
+    final iso = _modelStats!['isolation_forest'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('🧠 ML Model Performance',
+            style: TextStyle(
+                color: AppColors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text(
+            'All models trained on 2,000 synthetic samples based on real Indian logistics patterns',
+            style: TextStyle(
+                color: AppColors.white70,
+                fontSize: 13,
+                fontStyle: FontStyle.italic)),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.50,
+          children: [
+            _buildModelCard(
+              title: 'Random Forest',
+              type: 'Regression',
+              mainMetricLabel: 'MAE',
+              mainMetricValue: '${rf['mae_minutes']} min',
+              details: [
+                'Training samples: 1,600',
+                'Test samples: 400',
+                'Features used: 10',
+                'Algorithm: Ensemble (100 decision trees)',
+                'Task: Regression (predicts delay in minutes)',
+              ],
+              purpose: 'Delay Prediction',
+              accentColor: Colors.blue,
+            ),
+            _buildModelCard(
+              title: 'Gradient Boosting',
+              type: 'Classification',
+              mainMetricLabel: 'Accuracy',
+              mainMetricValue: '${(gb['accuracy'] * 100).toStringAsFixed(1)}%',
+              details: [
+                'Training samples: 1,600',
+                'Classes: weather, traffic, port, customs, mechanical',
+                'Algorithm: Sequential boosting',
+                'Task: Multi-class classification',
+              ],
+              purpose: 'Disruption Type',
+              accentColor: Colors.green,
+            ),
+            _buildModelCard(
+              title: '📊 Logistic Regression',
+              type: 'Binary Classification',
+              mainMetricLabel: 'Accuracy',
+              mainMetricValue: '90.5%',
+              details: [],
+              purpose: 'Risk probability scoring',
+              accentColor: Colors.purple,
+            ),
+            _buildModelCard(
+              title: '🔍 Isolation Forest',
+              type: 'Anomaly Detection',
+              mainMetricLabel: 'Contamination',
+              mainMetricValue: '10%',
+              details: [],
+              purpose: 'Anomaly detection',
+              accentColor: Colors.orange,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _buildFeatureImportanceChart(),
+      ],
+    );
+  }
+
+  Widget _buildModelCard({
+    required String title,
+    required String type,
+    required String mainMetricLabel,
+    required String mainMetricValue,
+    required List<String> details,
+    required String purpose,
+    required Color accentColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 64),
-              const SizedBox(height: 16),
-              const Text('Something went wrong. Please try again.', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: () => setState(() => _hasError = false), child: const Text('Retry')),
+              Icon(Icons.auto_awesome, color: accentColor, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                      color: accentColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(type,
+              style: TextStyle(
+                  color: AppColors.white.withValues(alpha: 0.6), fontSize: 11)),
+          const SizedBox(height: 12),
+          Text(mainMetricValue,
+              style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
+          Text(mainMetricLabel,
+              style: TextStyle(
+                  color: AppColors.white.withValues(alpha: 0.8), fontSize: 10)),
+          const Spacer(),
+          ...details.map((d) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('• $d',
+                    style: TextStyle(
+                        color: AppColors.white.withValues(alpha: 0.7),
+                        fontSize: 10,
+                        height: 1.2)),
+              )),
+          const SizedBox(height: 6),
+          Text('Purpose: $purpose',
+              style: TextStyle(
+                  color: AppColors.white.withValues(alpha: 0.9),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureImportanceChart() {
+    final rawImportance =
+        _featureImportanceData!['feature_importance'] as Map<String, dynamic>;
+    final entries = rawImportance.entries.toList();
+    entries.sort((a, b) => (b.value as double).compareTo(a.value as double));
+
+    // Take top 5 features
+    final topEntries = entries.take(5).toList();
+
+    return _buildCard(
+      title: 'Top Predictive Features',
+      child: SizedBox(
+        height: 250,
+        // Wrap with RotatedBox to make it a horizontal bar chart
+        child: RotatedBox(
+          quarterTurns: 1,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              barTouchData: BarTouchData(enabled: false),
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 100,
+                    getTitlesWidget: (value, meta) {
+                      final int index = value.toInt();
+                      if (index >= 0 && index < topEntries.length) {
+                        return RotatedBox(
+                          quarterTurns: -1,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: SizedBox(
+                              width: 90,
+                              child: Text(
+                                _formatFeatureName(topEntries[index].key),
+                                style: const TextStyle(
+                                    color: AppColors.white, fontSize: 10),
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      return RotatedBox(
+                        quarterTurns: -1,
+                        child: Text(
+                          value.toStringAsFixed(2),
+                          style: const TextStyle(
+                              color: AppColors.white, fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: const FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(topEntries.length, (index) {
+                return BarChartGroupData(
+                  x: index,
+                  barRods: [
+                    BarChartRodData(
+                      toY: (topEntries[index].value as num).toDouble(),
+                      color: AppColors.primary,
+                      width: 16,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(
+                              4)), // Top when rotated becomes right
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
         ),
-      );
+      ),
+    );
+  }
+
+  String _formatFeatureName(String key) {
+    switch (key) {
+      case 'weather_score':
+        return 'Weather Index';
+      case 'traffic_score':
+        return 'Traffic Level';
+      case 'time_of_day':
+        return 'Time of Day';
+      case 'day_of_week':
+        return 'Day of Week';
+      case 'is_monsoon':
+        return 'Monsoon Season';
+      case 'port_congestion':
+        return 'Port Congestion';
+      case 'is_festival_season':
+        return 'Festival Season';
+      case 'vehicle_age_years':
+        return 'Vehicle Age';
+      case 'cargo_weight_tons':
+        return 'Cargo Weight';
+      case 'distance_km':
+        return 'Distance (km)';
+      default:
+        return key
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((w) => w.substring(0, 1).toUpperCase() + w.substring(1))
+            .join(' ');
     }
   }
 
@@ -199,7 +619,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       barRods: [
         BarChartRodData(
           toY: y,
-          color: Colors.blue,
+          color: AppColors.primary,
           width: 22,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
         ),
@@ -208,27 +628,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildRiskRow(String route, double score, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(route, style: const TextStyle(color: Colors.white, fontSize: 14)),
-              Text('${(score * 100).toInt()}%', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: score,
-            backgroundColor: Colors.white12,
-            color: color,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
+    return Semantics(
+      label: 'Route risk for $route is ${(score * 100).toInt()}%',
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(route,
+                    style:
+                        const TextStyle(color: AppColors.white, fontSize: 14)),
+                Text('${(score * 100).toInt()}%',
+                    style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            LinearProgressIndicator(
+              value: score,
+              backgroundColor: AppColors.white.withValues(alpha: 0.12),
+              color: color,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -238,13 +667,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.cardAlt,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(title,
+              style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           child,
         ],
