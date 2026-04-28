@@ -6,7 +6,7 @@ import 'firebase_service.dart';
 ///
 /// Provides predictive analytics for delay times and anomaly detection.
 class MlService {
-  static const String _baseUrl = 'http://localhost:5000';
+  static const String _baseUrl = 'https://smartchain-ml.onrender.com';
   static bool _isConnected = false;
 
   /// Returns whether the ML microservice is currently reachable.

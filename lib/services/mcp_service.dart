@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 /// 
 /// Facilitates communication with local supply chain tools and live condition monitoring.
 class McpService {
-  static const _baseUrl = 'http://localhost:3001';
+  static const _baseUrl = 'https://smartchain-ml.onrender.com';
   static bool _isMcpConnected = false;
 
   /// Returns whether the MCP server is currently reachable.
