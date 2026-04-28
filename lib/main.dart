@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
+import 'screens/role_selection_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/route_map_screen.dart';
 import 'screens/analytics_screen.dart';
+import 'screens/forecast_screen.dart';
 import 'screens/sustainability_screen.dart';
 import 'screens/audit_trail_screen.dart';
-import 'screens/forecast_screen.dart';
-import 'screens/role_selection_screen.dart';
+import 'screens/driver_portal_screen.dart';
 import 'theme/app_colors.dart';
 import 'constants/app_strings.dart';
 
@@ -47,7 +48,10 @@ class SmartChainApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const RoleSelectionScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const RoleSelectionScreen(),
+      },
     );
   }
 }
@@ -66,14 +70,25 @@ class _AppShellState extends State<AppShell> {
     DashboardScreen(),
     RouteMapScreen(),
     AnalyticsScreen(),
+    ForecastScreen(),
     SustainabilityScreen(),
     AuditTrailScreen(),
-    ForecastScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        title: const Text('Manager Portal'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.switch_account, color: AppColors.white),
+            onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+          ),
+        ],
+      ),
       body: Row(
         children: [
           NavigationRail(
@@ -115,19 +130,19 @@ class _AppShellState extends State<AppShell> {
                 label: Text('Analytics'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.eco_outlined, color: AppColors.success),
-                selectedIcon: Icon(Icons.eco, color: AppColors.success),
+                icon: Icon(Icons.radar_outlined),
+                selectedIcon: Icon(Icons.radar),
+                label: Text('Forecast'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.eco_outlined),
+                selectedIcon: Icon(Icons.eco),
                 label: Text('Carbon'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.history_outlined),
                 selectedIcon: Icon(Icons.history),
                 label: Text('Audit'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.radar_outlined),
-                selectedIcon: Icon(Icons.radar),
-                label: Text('Forecast'),
               ),
             ],
             trailing: Expanded(

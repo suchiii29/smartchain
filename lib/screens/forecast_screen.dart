@@ -300,7 +300,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                       fontSize: 13,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text(p['preemptiveAction'] as String,
+              Text((p['preemptiveAction'] as String).replaceAll('\\n', '\n').replaceAll('- ', '\n• '),
                   style: TextStyle(color: AppColors.white70, fontSize: 14)),
               const SizedBox(height: 16),
               SizedBox(

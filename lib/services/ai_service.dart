@@ -63,6 +63,8 @@ class AiService {
     try {
       // 1. Fetch live conditions from MCP
       final liveConditions = await McpService.getSupplyChainConditions();
+      final trafficData = await McpService.getTrafficConditions();
+      final trafficConditions = trafficData.map((t) => '${t['highway']} traffic: ${t['description']} (${t['severity']} severity)').toList();
 
       final weatherConditions = <String>[];
       for (var s in shipments.take(3)) {
@@ -78,7 +80,8 @@ class AiService {
       final allConditions = [
         ...conditions,
         ...liveConditions,
-        ...weatherConditions
+        ...weatherConditions,
+        ...trafficConditions,
       ];
 
       // 3. Update prompt with MCP context
@@ -143,8 +146,7 @@ The JSON array should contain objects with keys: id, type, severity, affectedRou
         // 5. Log decision in Audit Trail
         AuditService.addEntry(
           decisionType: 'alert_generated',
-          inputSummary:
-              '${shipments.length} shipments analyzed, real weather integrated',
+          inputSummary: '${shipments.length} shipments analyzed',
           outputDecision: '${alerts.length} disruptions detected',
           mcpToolsCalled: ['getSupplyChainConditions', 'sendAlert'],
           confidence: 0.87,

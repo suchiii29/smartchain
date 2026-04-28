@@ -106,4 +106,31 @@ class FirebaseService {
         .limitToLast(10)
         .onValue;
   }
+
+  static Future<void> saveDriverAction({
+    required String driverName,
+    required String actionType,
+    required String route,
+    required String details,
+  }) async {
+    try {
+      await FirebaseDatabase.instance.ref('driver_updates').push().set({
+        'driverName': driverName,
+        'actionType': actionType,
+        'route': route,
+        'details': details,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Firebase driver action error: $e');
+    }
+  }
+
+  static Stream<DatabaseEvent> getDriverUpdatesStream() {
+    return FirebaseDatabase.instance
+        .ref('driver_updates')
+        .orderByChild('timestamp')
+        .limitToLast(5)
+        .onValue;
+  }
 }

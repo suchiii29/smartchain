@@ -12,7 +12,6 @@ void main() {
         outputDecision: 'test output',
         mcpToolsCalled: ['tool1'],
         confidence: 0.99,
-        aiModel: 'Gemini 1.5 Pro',
       );
 
       expect(AuditService.entries.length, initialCount + 1);
@@ -26,7 +25,6 @@ void main() {
         outputDecision: '...',
         mcpToolsCalled: [],
         confidence: 0.5,
-        aiModel: 'Gemini 1.5 Pro',
       );
       
       final olderTimestamp = AuditService.entries.first.timestamp;
@@ -38,7 +36,6 @@ void main() {
         outputDecision: '...',
         mcpToolsCalled: [],
         confidence: 0.6,
-        aiModel: 'Gemini 1.5 Pro',
       );
 
       expect(AuditService.entries.first.decisionType, 'newer');

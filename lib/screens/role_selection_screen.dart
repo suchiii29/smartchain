@@ -5,7 +5,6 @@ import '../theme/app_colors.dart';
 import '../constants/app_strings.dart';
 import '../widgets/error_screen.dart';
 import 'driver_portal_screen.dart';
-import 'customer_portal_screen.dart';
 
 
 class RoleSelectionScreen extends StatelessWidget {
@@ -18,10 +17,6 @@ class RoleSelectionScreen extends StatelessWidget {
     switch (role) {
       case 'driver':
         nextScreen = const DriverPortalScreen();
-        break;
-      case 'customer':
-        nextScreen = const CustomerPortalScreen();
-        break;
       case 'manager':
       default:
         nextScreen = const AppShell();
@@ -84,7 +79,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   icon: Icons.local_shipping,
                   iconColor: AppColors.primary,
                   title: 'Driver Portal',
-                  subtitle: 'View routes and delivery alerts',
+                  subtitle: 'View routes and get AI alerts',
                 ),
                 const SizedBox(height: 16),
                 _buildRoleCard(
@@ -93,16 +88,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   icon: Icons.dashboard,
                   iconColor: AppColors.accent,
                   title: 'Manager Portal',
-                  subtitle: 'Monitor all shipments and AI analysis',
-                ),
-                const SizedBox(height: 16),
-                _buildRoleCard(
-                  context: context,
-                  role: 'customer',
-                  icon: Icons.person,
-                  iconColor: AppColors.success,
-                  title: 'Customer Portal',
-                  subtitle: 'Track your orders in real time',
+                  subtitle: 'Monitor fleet and AI analysis',
                 ),
               ],
             ),
@@ -129,6 +115,7 @@ class RoleSelectionScreen extends StatelessWidget {
         onTap: () => _selectRole(context, role),
         borderRadius: BorderRadius.circular(16),
         child: Container(
+          height: 120,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.card,

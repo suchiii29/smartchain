@@ -60,4 +60,32 @@ class McpService {
       // Silently ignore errors
     }
   }
+
+  static Future<List<Map<String,dynamic>>> getTrafficConditions() async {
+    // In production this would call Google Traffic API
+    // For prototype, returns realistic Indian traffic data
+    return [
+      {
+        'highway': 'NH48',
+        'location': 'Mumbai-Pune Expressway',
+        'severity': 'high',
+        'description': 'Heavy traffic near Khopoli - 45min delay',
+        'affected_routes': ['Mumbai → Bengaluru', 'Mumbai → Pune'],
+      },
+      {
+        'highway': 'NH44', 
+        'location': 'Hyderabad outer ring road',
+        'severity': 'medium',
+        'description': 'Moderate congestion near Shamshabad',
+        'affected_routes': ['Hyderabad → Bengaluru'],
+      },
+      {
+        'highway': 'NH19',
+        'location': 'Delhi-Agra Highway',
+        'severity': 'low', 
+        'description': 'Light traffic, normal flow',
+        'affected_routes': ['Delhi → Jaipur'],
+      },
+    ];
+  }
 }

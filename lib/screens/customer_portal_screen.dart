@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../theme/app_colors.dart';
+import '../services/shipment_state_service.dart';
 
 class CustomerPortalScreen extends StatefulWidget {
   const CustomerPortalScreen({super.key});
@@ -18,6 +19,7 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
   @override
   void initState() {
     super.initState();
+    ShipmentStateService.initialize();
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (mounted) {
         setState(() {
@@ -102,6 +104,7 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
   }
 
   Widget _buildOrderTrackingCard() {
+    final shipment = ShipmentStateService.shipments.first;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -115,17 +118,17 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Order ID: ORD-2024-001",
-                    style: TextStyle(color: AppColors.white70, fontSize: 12),
+                    "Order ID: ${shipment.id}",
+                    style: const TextStyle(color: AppColors.white70, fontSize: 12),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    "Electronics Package",
-                    style: TextStyle(
+                    shipment.cargoType,
+                    style: const TextStyle(
                       color: AppColors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -139,32 +142,32 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
           const SizedBox(height: 20),
           Divider(color: AppColors.white.withValues(alpha: 0.12)),
           const SizedBox(height: 20),
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("FROM",
+                    const Text("FROM",
                         style:
                             TextStyle(color: AppColors.white38, fontSize: 10)),
-                    Text("Mumbai",
-                        style: TextStyle(
+                    Text(shipment.origin,
+                        style: const TextStyle(
                             color: AppColors.white,
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
-              Icon(Icons.map, color: AppColors.white38, size: 24),
+              const Icon(Icons.map, color: AppColors.white38, size: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text("TO",
+                    const Text("TO",
                         style:
                             TextStyle(color: AppColors.white38, fontSize: 10)),
-                    Text("Bengaluru",
-                        style: TextStyle(
+                    Text(shipment.destination,
+                        style: const TextStyle(
                             color: AppColors.white,
                             fontWeight: FontWeight.bold)),
                   ],
@@ -178,6 +181,18 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
   }
 
   Widget _buildPulsingStatus() {
+    final shipment = ShipmentStateService.shipments.first;
+    Color statusColor = AppColors.success;
+    String statusText = "ON TIME";
+
+    if (shipment.status == 'delayed') {
+      statusColor = AppColors.warning;
+      statusText = "DELAYED";
+    } else if (shipment.status == 'critical') {
+      statusColor = AppColors.error;
+      statusText = "CRITICAL";
+    }
+
     return Row(
       children: [
         TweenAnimationBuilder<double>(
@@ -188,11 +203,11 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: value),
+                color: statusColor.withValues(alpha: value),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.success.withValues(alpha: value * 0.5),
+                    color: statusColor.withValues(alpha: value * 0.5),
                     blurRadius: 4,
                     spreadRadius: 2,
                   ),
@@ -203,10 +218,10 @@ class _CustomerPortalScreenState extends State<CustomerPortalScreen> {
           onEnd: () {},
         ),
         const SizedBox(width: 8),
-        const Text(
-          "IN TRANSIT",
+        Text(
+          statusText,
           style: TextStyle(
-            color: AppColors.success,
+            color: statusColor,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),

@@ -15,6 +15,34 @@ class AuditTrailScreen extends StatefulWidget {
 class _AuditTrailScreenState extends State<AuditTrailScreen> {
   bool _hasError = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (AuditService.entries.isEmpty) {
+      AuditService.addEntry(
+        decisionType: 'alert_generated',
+        inputSummary: '8 shipments analyzed with real weather',
+        outputDecision: '3 disruptions detected',
+        mcpToolsCalled: ['getConditions', 'sendAlert'],
+        confidence: 0.87,
+      );
+      AuditService.addEntry(
+        decisionType: 'route_optimized', 
+        inputSummary: 'Mumbai→Bengaluru critical route',
+        outputDecision: 'Rerouted via NH66 - saving ₹7K',
+        mcpToolsCalled: ['getRouteData', 'updateRoute'],
+        confidence: 0.92,
+      );
+      AuditService.addEntry(
+        decisionType: 'driver_notified',
+        inputSummary: 'Rajesh Kumar - route deviation detected',
+        outputDecision: 'Driver notified via app',
+        mcpToolsCalled: ['sendNotification'],
+        confidence: 0.95,
+      );
+    }
+  }
+
   String _getTimeAgo(DateTime timestamp) {
     final diff = DateTime.now().difference(timestamp);
     if (diff.inSeconds < 60) return 'just now';

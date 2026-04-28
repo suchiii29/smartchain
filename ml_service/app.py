@@ -431,4 +431,4 @@ if __name__ == '__main__':
     print("  GET  /anomalies - Anomaly detection")
     print("  GET  /feature-importance - Feature importance")
     print("  GET  /model-stats - All model statistics")
-    app.run(debug=False, port=5000, host='0.0.0.0')
+    app.run(debug=False, port=8080, host="0.0.0.0", threaded=True)
